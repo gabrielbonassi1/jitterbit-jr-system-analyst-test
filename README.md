@@ -40,6 +40,23 @@ cp .env.example .env
 
 2. Ajuste as variáveis conforme necessário no arquivo `.env`
 
+### Rodar o servidor
+
+```bash
+# Iniciar o servidor via comando do npm
+npm run start
+```
+
+### Rodar o script de testes automatizados
+
+```bash
+# Iniciar o script de testes via comando do npm
+npm run test
+
+# (Alternativa) iniciar o script de testes via bash
+bash test-runner.sh
+```
+
 ### Endpoints da API
 
 #### Obrigatórios

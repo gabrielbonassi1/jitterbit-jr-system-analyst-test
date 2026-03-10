@@ -1,0 +1,636 @@
+{
+  "info": {
+    "name": "Jitterbit Orders API",
+    "description": "API REST para gerenciamento de pedidos com autenticação JWT\n\n## Autenticação\n\nA API utiliza autenticação JWT (JSON Web Token). Para acessar os endpoints protegidos, você precisa:\n\n1. Fazer login em `/auth/login` com credenciais válidas\n2. Copiar o token JWT retornado\n3. Incluir o token no header Authorization: Bearer <token>\n\n## Credenciais de Teste\n\n- Username: `admin` | Password: `admin123` (role: admin)\n- Username: `user` | Password: `user123` (role: user)\n\n## Tecnologias\n\n- Node.js + Express\n- PostgreSQL\n- JWT Authentication\n- CORS enabled",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('token', response.token);",
+                  "    pm.environment.set('token', response.token);",
+                  "    console.log('Token saved:', response.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Autentica o usuário e retorna um token JWT válido por 24 horas.\n\n**Credenciais disponíveis:**\n- admin / admin123 (role: admin)\n- user / user123 (role: user)\n\n**Response (200):**\n```json\n{\n  \"success\": true,\n  \"message\": \"Login successful\",\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"user\": {\n    \"id\": 1,\n    \"username\": \"admin\",\n    \"role\": \"admin\"\n  }\n}\n```\n\n**Error (401):**\n```json\n{\n  \"success\": false,\n  \"message\": \"Invalid credentials\"\n}\n```"
+          },
+          "response": [
+            {
+              "name": "Success - Admin Login",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["auth", "login"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Login successful\",\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc3MzAwMzIwNCwiZXhwIjoxNzczMDg5NjA0fQ.example\",\n  \"user\": {\n    \"id\": 1,\n    \"username\": \"admin\",\n    \"role\": \"admin\"\n  }\n}"
+            },
+            {
+              "name": "Error - Invalid Credentials",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"wrongpassword\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["auth", "login"]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Invalid credentials\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
+            },
+            "description": "Retorna informações do usuário autenticado.\n\n**Requer:** Token JWT no header Authorization\n\n**Response (200):**\n```json\n{\n  \"success\": true,\n  \"user\": {\n    \"id\": 1,\n    \"username\": \"admin\",\n    \"role\": \"admin\"\n  }\n}\n```\n\n**Error (401):**\n```json\n{\n  \"success\": false,\n  \"message\": \"Access token is required\"\n}\n```"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/me",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["auth", "me"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"user\": {\n    \"id\": 1,\n    \"username\": \"admin\",\n    \"role\": \"admin\"\n  }\n}"
+            }
+          ]
+        }
+      ],
+      "description": "Endpoints de autenticação JWT"
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "Create Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numeroPedido\": \"PEDIDO-001\",\n  \"valorTotal\": 350.75,\n  \"dataCriacao\": \"2026-03-09T12:00:00Z\",\n  \"items\": [\n    {\n      \"idItem\": \"101\",\n      \"quantidadeItem\": 2,\n      \"valorItem\": 125.25\n    },\n    {\n      \"idItem\": \"102\",\n      \"quantidadeItem\": 1,\n      \"valorItem\": 100.25\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/order",
+              "host": ["{{baseUrl}}"],
+              "path": ["order"]
+            },
+            "description": "Cria um novo pedido no sistema.\n\n**Requer:** Token JWT\n\n**Transformação de dados:**\n- numeroPedido → orderId\n- valorTotal → value\n- dataCriacao → creationDate\n- items.idItem → items.productId\n- items.quantidadeItem → items.quantity\n- items.valorItem → items.price\n\n**Campos obrigatórios:**\n- numeroPedido (string)\n- valorTotal (number)\n- dataCriacao (ISO 8601 date)\n- items (array, não vazio)\n  - idItem (string)\n  - quantidadeItem (number)\n  - valorItem (number)\n\n**Response (201):**\n```json\n{\n  \"success\": true,\n  \"message\": \"Order created successfully\",\n  \"data\": {\n    \"numeroPedido\": \"PEDIDO-001\",\n    \"valorTotal\": 350.75,\n    \"dataCriacao\": \"2026-03-09T12:00:00.000Z\",\n    \"items\": [...]\n  }\n}\n```"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"numeroPedido\": \"PEDIDO-001\",\n  \"valorTotal\": 350.75,\n  \"dataCriacao\": \"2026-03-09T12:00:00Z\",\n  \"items\": [\n    {\n      \"idItem\": \"101\",\n      \"quantidadeItem\": 2,\n      \"valorItem\": 125.25\n    }\n  ]\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/order",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["order"]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Order created successfully\",\n  \"data\": {\n    \"numeroPedido\": \"PEDIDO-001\",\n    \"valorTotal\": 350.75,\n    \"dataCriacao\": \"2026-03-09T12:00:00.000Z\",\n    \"items\": [\n      {\n        \"idItem\": \"101\",\n        \"quantidadeItem\": 2,\n        \"valorItem\": 125.25\n      }\n    ]\n  }\n}"
+            },
+            {
+              "name": "Error - Validation",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"numeroPedido\": \"PEDIDO-001\",\n  \"valorTotal\": 350.75\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/order",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["order"]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Validation error\",\n  \"error\": \"dataCriacao is required\"\n}"
+            },
+            {
+              "name": "Error - Duplicate Order ID",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"numeroPedido\": \"PEDIDO-001\",\n  \"valorTotal\": 350.75,\n  \"dataCriacao\": \"2026-03-09T12:00:00Z\",\n  \"items\": [...]\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/order",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["order"]
+                }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Order ID already exists\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Order by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/order/:orderId",
+              "host": ["{{baseUrl}}"],
+              "path": ["order", ":orderId"],
+              "variable": [
+                {
+                  "key": "orderId",
+                  "value": "PEDIDO-001",
+                  "description": "ID do pedido"
+                }
+              ]
+            },
+            "description": "Busca um pedido específico por ID.\n\n**Requer:** Token JWT\n\n**Parâmetros:**\n- orderId (path): ID do pedido\n\n**Response (200):**\n```json\n{\n  \"success\": true,\n  \"data\": {\n    \"numeroPedido\": \"PEDIDO-001\",\n    \"valorTotal\": 350.75,\n    \"dataCriacao\": \"2026-03-09T12:00:00.000Z\",\n    \"items\": [...]\n  }\n}\n```\n\n**Error (404):**\n```json\n{\n  \"success\": false,\n  \"message\": \"Order not found\"\n}\n```"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/order/PEDIDO-001",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["order", "PEDIDO-001"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"numeroPedido\": \"PEDIDO-001\",\n    \"valorTotal\": 350.75,\n    \"dataCriacao\": \"2026-03-09T12:00:00.000Z\",\n    \"items\": [\n      {\n        \"idItem\": \"101\",\n        \"quantidadeItem\": 2,\n        \"valorItem\": 125.25\n      }\n    ]\n  }\n}"
+            },
+            {
+              "name": "Error - Not Found",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/order/NON-EXISTENT",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["order", "NON-EXISTENT"]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Order not found\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "List All Orders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/order/list",
+              "host": ["{{baseUrl}}"],
+              "path": ["order", "list"]
+            },
+            "description": "Lista todos os pedidos do sistema.\n\n**Requer:** Token JWT\n\n**Response (200):**\n```json\n{\n  \"success\": true,\n  \"count\": 2,\n  \"data\": [\n    {\n      \"numeroPedido\": \"PEDIDO-001\",\n      \"valorTotal\": 350.75,\n      \"dataCriacao\": \"2026-03-09T12:00:00.000Z\",\n      \"items\": [...]\n    },\n    {...}\n  ]\n}\n```"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/order/list",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["order", "list"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"count\": 1,\n  \"data\": [\n    {\n      \"numeroPedido\": \"PEDIDO-001\",\n      \"valorTotal\": 350.75,\n      \"dataCriacao\": \"2026-03-09T12:00:00.000Z\",\n      \"items\": [\n        {\n          \"idItem\": \"101\",\n          \"quantidadeItem\": 2,\n          \"valorItem\": 125.25\n        }\n      ]\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Order",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numeroPedido\": \"PEDIDO-001\",\n  \"valorTotal\": 500.00,\n  \"dataCriacao\": \"2026-03-09T12:00:00Z\",\n  \"items\": [\n    {\n      \"idItem\": \"201\",\n      \"quantidadeItem\": 5,\n      \"valorItem\": 100.00\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/order/:orderId",
+              "host": ["{{baseUrl}}"],
+              "path": ["order", ":orderId"],
+              "variable": [
+                {
+                  "key": "orderId",
+                  "value": "PEDIDO-001",
+                  "description": "ID do pedido a ser atualizado"
+                }
+              ]
+            },
+            "description": "Atualiza um pedido existente.\n\n**Requer:** Token JWT\n\n**Parâmetros:**\n- orderId (path): ID do pedido\n\n**Body:** Mesma estrutura do POST /order\n\n**Response (200):**\n```json\n{\n  \"success\": true,\n  \"message\": \"Order updated successfully\",\n  \"data\": {...}\n}\n```\n\n**Error (404):**\n```json\n{\n  \"success\": false,\n  \"message\": \"Order not found\"\n}\n```"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"numeroPedido\": \"PEDIDO-001\",\n  \"valorTotal\": 500.00,\n  \"dataCriacao\": \"2026-03-09T12:00:00Z\",\n  \"items\": [\n    {\n      \"idItem\": \"201\",\n      \"quantidadeItem\": 5,\n      \"valorItem\": 100.00\n    }\n  ]\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/order/PEDIDO-001",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["order", "PEDIDO-001"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Order updated successfully\",\n  \"data\": {\n    \"numeroPedido\": \"PEDIDO-001\",\n    \"valorTotal\": 500.00,\n    \"dataCriacao\": \"2026-03-09T12:00:00.000Z\",\n    \"items\": [\n      {\n        \"idItem\": \"201\",\n        \"quantidadeItem\": 5,\n        \"valorItem\": 100.00\n      }\n    ]\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Delete Order",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/order/:orderId",
+              "host": ["{{baseUrl}}"],
+              "path": ["order", ":orderId"],
+              "variable": [
+                {
+                  "key": "orderId",
+                  "value": "PEDIDO-001",
+                  "description": "ID do pedido a ser deletado"
+                }
+              ]
+            },
+            "description": "Deleta um pedido do sistema. Os itens associados são deletados automaticamente (CASCADE).\n\n**Requer:** Token JWT\n\n**Parâmetros:**\n- orderId (path): ID do pedido\n\n**Response (200):**\n```json\n{\n  \"success\": true,\n  \"message\": \"Order deleted successfully\"\n}\n```\n\n**Error (404):**\n```json\n{\n  \"success\": false,\n  \"message\": \"Order not found\"\n}\n```"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/order/PEDIDO-001",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["order", "PEDIDO-001"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Order deleted successfully\"\n}"
+            },
+            {
+              "name": "Error - Not Found",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/order/NON-EXISTENT",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["order", "NON-EXISTENT"]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Order not found\"\n}"
+            }
+          ]
+        }
+      ],
+      "description": "Endpoints para gerenciamento de pedidos (CRUD completo)",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{token}}",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Verifica se a API está funcionando.\n\n**Não requer autenticação**\n\n**Response (200):**\n```json\n{\n  \"success\": true,\n  \"message\": \"API is running\",\n  \"timestamp\": \"2026-03-09T12:00:00.000Z\"\n}\n```"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/health",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["health"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"API is running\",\n  \"timestamp\": \"2026-03-09T12:00:00.000Z\"\n}"
+            }
+          ]
+        }
+      ],
+      "description": "Endpoint de health check"
+    }
+  ]
+}
